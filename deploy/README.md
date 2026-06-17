@@ -6,8 +6,8 @@ Target domain: `cue.getkasa.in`
 
 Add these in GitHub repo settings:
 
-- `DEPLOY_HOST`: VPS public IP or hostname
-- `DEPLOY_USER`: SSH user, for example `ubuntu`
+- `DEPLOY_HOST`: `13.206.210.16`
+- `DEPLOY_USER`: `ubuntu`
 - `DEPLOY_SSH_KEY`: private key contents from `kasa-key/kasa.pem`
 - `DEPLOY_PATH`: `/var/www/kasa-cue`
 - `DATABASE_URL`
@@ -31,6 +31,29 @@ KASA_DOCUMENTS_S3_PREFIX=kasa-cue-documents
 OPENAI_REPLY_MODEL=gpt-4o-mini
 OPENAI_SCREEN_ANALYSIS_MODEL=gpt-4o
 OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
+```
+
+### Add Secrets in GitHub
+
+Open the repo, then go to:
+
+`Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
+
+No GitHub personal access token is required for this workflow. GitHub provides `GITHUB_TOKEN` automatically for checkout. The only private credential needed by the deploy job is the VPS SSH key in `DEPLOY_SSH_KEY`.
+
+For `DEPLOY_SSH_KEY`, copy the full PEM content:
+
+```bash
+pbcopy < ../kasa-key/kasa.pem
+```
+
+For `PRODUCTION_ENV`, copy the production env from local `.env` plus the public URLs:
+
+```bash
+{
+  grep -Ev '^(AUTH_URL|NEXTAUTH_URL|NEXT_PUBLIC_APP_URL)=' .env
+  printf '\nAUTH_URL=https://cue.getkasa.in\nNEXTAUTH_URL=https://cue.getkasa.in\nNEXT_PUBLIC_APP_URL=https://cue.getkasa.in\n'
+} | pbcopy
 ```
 
 ## First Server Setup
