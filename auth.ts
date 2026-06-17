@@ -7,6 +7,12 @@ import Google from "next-auth/providers/google";
 
 export type AppRole = "admin" | "user";
 
+type OAuthUserInput = {
+  email: string;
+  image?: null | string;
+  name?: null | string;
+};
+
 const providers: Provider[] = [
   Credentials({
     credentials: {
@@ -55,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     process.env.AUTH_SECRET ??
     "kasa-cue-local-dev-secret-change-before-production",
   pages: {
+    error: "/login",
     signIn: "/login",
   },
   session: {
@@ -75,21 +82,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return false;
       }
 
-      await prisma.user.upsert({
-        where: { email },
-        update: {
-          emailVerified: new Date(),
-          image: user.image,
-          name: user.name,
-        },
-        create: {
+      try {
+        await syncOAuthUser({
           email,
-          emailVerified: new Date(),
           image: user.image,
           name: user.name,
-          role: "user",
-        },
-      });
+        });
+      } catch (error) {
+        console.error("Google sign-in user sync failed", error);
+      }
 
       return true;
     },
@@ -99,19 +100,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: {
-            email: token.email.toLowerCase(),
-          },
-          select: {
-            id: true,
-            role: true,
-          },
-        });
+        try {
+          const email = token.email.toLowerCase();
+          const dbUser =
+            (await prisma.user.findUnique({
+              where: {
+                email,
+              },
+              select: {
+                id: true,
+                role: true,
+              },
+            })) ??
+            (await syncOAuthUser({
+              email,
+              image: typeof token.picture === "string" ? token.picture : null,
+              name: typeof token.name === "string" ? token.name : null,
+            }));
 
-        if (dbUser) {
           token.sub = dbUser.id;
           token.role = dbUser.role.toLowerCase() as AppRole;
+        } catch (error) {
+          console.error("JWT user lookup failed", error);
+          token.role = token.role ?? "user";
         }
       }
 
@@ -127,3 +138,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+async function syncOAuthUser({ email, image, name }: OAuthUserInput) {
+  return prisma.user.upsert({
+    where: { email },
+    update: {
+      emailVerified: new Date(),
+      image,
+      name,
+    },
+    create: {
+      email,
+      emailVerified: new Date(),
+      image,
+      name,
+      passwordHash: "",
+      role: "user",
+    },
+    select: {
+      id: true,
+      role: true,
+    },
+  });
+}
