@@ -120,7 +120,7 @@ export function verifyDesktopAuthToken(token: string | undefined) {
 function signPayload(encodedPayload: string) {
   const secret =
     process.env.AUTH_SECRET ??
-    "kasa-copilot-local-dev-secret-change-before-production";
+    "kasa-cue-local-dev-secret-change-before-production";
 
   return createHmac("sha256", secret).update(encodedPayload).digest("base64url");
 }

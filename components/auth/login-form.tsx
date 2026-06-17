@@ -67,7 +67,7 @@ export function LoginForm({ callbackUrl = "/" }: LoginFormProps) {
             </Badge>
           </div>
           <div>
-            <CardTitle className="text-2xl">Sign in to Kasa Copilot</CardTitle>
+            <CardTitle className="text-2xl">Sign in to Kasa Cue</CardTitle>
             <CardDescription className="mt-2">
               Login required before accessing the communication workspace.
             </CardDescription>
@@ -117,11 +117,6 @@ export function LoginForm({ callbackUrl = "/" }: LoginFormProps) {
               Sign in
             </Button>
           </form>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-            <p className="font-semibold text-slate-900">Demo access</p>
-            <p>Admin: admin@kasa.ai / admin123</p>
-            <p>User: user@kasa.ai / user123</p>
-          </div>
         </CardContent>
       </Card>
     </main>

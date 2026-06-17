@@ -2,17 +2,19 @@
 
 Target domain: `cue.getkasa.in`
 
-## GitHub Secrets
+## GitHub Environment
 
-Add these in GitHub repo settings:
+Create/use this GitHub Actions environment:
 
-- `DEPLOY_HOST`: `13.206.210.16`
-- `DEPLOY_USER`: `ubuntu`
 - `DEPLOY_SSH_KEY`: private key contents from `kasa-key/kasa.pem`
-- `DEPLOY_PATH`: `/var/www/kasa-cue`
-- `DATABASE_URL`
-- `OPENAI_API_KEY`
-- `PRODUCTION_ENV`: full `.env.production` content
+
+The workflow uses the GitHub Environment named `KASACUE_DEPLOYMENT`. Host/user/path are fixed in `.github/workflows/deploy.yml`:
+
+- Host: `13.206.210.16`
+- User: `ubuntu`
+- Path: `/var/www/kasa-cue`
+
+Production env values stay on the VPS at `/var/www/kasa-cue/.env.production`, so GitHub only needs `DEPLOY_SSH_KEY`.
 
 Example `PRODUCTION_ENV`:
 
@@ -22,6 +24,9 @@ AUTH_URL=https://cue.getkasa.in
 NEXTAUTH_URL=https://cue.getkasa.in
 NEXT_PUBLIC_APP_URL=https://cue.getkasa.in
 DATABASE_URL=mysql://user:password@host:3306/database
+KASA_ADMIN_EMAIL=admin@cue.getkasa.in
+KASA_ADMIN_NAME=Kasa Cue Admin
+KASA_ADMIN_PASSWORD=replace-with-strong-admin-password
 OPENAI_API_KEY=sk-...
 AWS_REGION=ap-south-1
 AWS_S3_BUCKET=your-bucket
@@ -33,11 +38,11 @@ OPENAI_SCREEN_ANALYSIS_MODEL=gpt-4o
 OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
 ```
 
-### Add Secrets in GitHub
+### Add SSH Key in GitHub
 
 Open the repo, then go to:
 
-`Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
+`Settings` -> `Environments` -> `KASACUE_DEPLOYMENT` -> `Environment secrets` -> `Add secret`
 
 No GitHub personal access token is required for this workflow. GitHub provides `GITHUB_TOKEN` automatically for checkout. The only private credential needed by the deploy job is the VPS SSH key in `DEPLOY_SSH_KEY`.
 
@@ -47,7 +52,7 @@ For `DEPLOY_SSH_KEY`, copy the full PEM content:
 pbcopy < ../kasa-key/kasa.pem
 ```
 
-For `PRODUCTION_ENV`, copy the production env from local `.env` plus the public URLs:
+Production env is managed directly on the VPS. To refresh it from local `.env`, SSH into the server or pipe a reviewed env file to `/var/www/kasa-cue/.env.production`.
 
 ```bash
 {
@@ -105,9 +110,10 @@ Push to `master` or `main`. GitHub Actions will:
 2. Generate Prisma client
 3. Build the app
 4. Sync source to the VPS
-5. Write `.env.production`
-6. Install/build on the server
-7. Restart `kasa-cue`
+5. Install dependencies on the server
+6. Apply Prisma migrations
+7. Seed/update the admin user from server env
+8. Build and restart `kasa-cue`
 
 ## Local PEM Key
 

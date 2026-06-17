@@ -16,7 +16,7 @@
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed"
   },
   "dependencies": {

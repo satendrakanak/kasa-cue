@@ -3,40 +3,33 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const users = [
-  {
-    name: "Kasa Admin",
-    email: "admin@kasa.ai",
-    password: "admin123",
-    role: "admin",
-  },
-  {
-    name: "Kasa User",
-    email: "user@kasa.ai",
-    password: "user123",
-    role: "user",
-  },
-];
+const adminEmail = process.env.KASA_ADMIN_EMAIL ?? "admin@cue.getkasa.in";
+const adminName = process.env.KASA_ADMIN_NAME ?? "Kasa Cue Admin";
+const adminPassword = process.env.KASA_ADMIN_PASSWORD;
 
 async function main() {
-  for (const user of users) {
-    const passwordHash = await bcrypt.hash(user.password, 12);
-
-    await prisma.user.upsert({
-      where: { email: user.email },
-      update: {
-        name: user.name,
-        passwordHash,
-        role: user.role,
-      },
-      create: {
-        name: user.name,
-        email: user.email,
-        passwordHash,
-        role: user.role,
-      },
-    });
+  if (!adminPassword) {
+    throw new Error("KASA_ADMIN_PASSWORD is required before seeding admin user.");
   }
+
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+  await prisma.user.upsert({
+    where: { email: adminEmail.toLowerCase() },
+    update: {
+      name: adminName,
+      passwordHash,
+      role: "admin",
+    },
+    create: {
+      name: adminName,
+      email: adminEmail.toLowerCase(),
+      passwordHash,
+      role: "admin",
+    },
+  });
+
+  console.log(`Admin user ready: ${adminEmail.toLowerCase()}`);
 }
 
 main()

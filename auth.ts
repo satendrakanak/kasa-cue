@@ -8,7 +8,7 @@ export type AppRole = "admin" | "user";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret:
     process.env.AUTH_SECRET ??
-    "kasa-copilot-local-dev-secret-change-before-production",
+    "kasa-cue-local-dev-secret-change-before-production",
   pages: {
     signIn: "/login",
   },
