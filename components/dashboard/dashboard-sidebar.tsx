@@ -49,7 +49,7 @@ export function DashboardSidebar({
         />
         <SidebarItem
           active={activeItem === "sessions"}
-          href="/dashboard"
+          href="/dashboard/sessions"
           icon={CalendarClock}
           label="Sessions"
         />

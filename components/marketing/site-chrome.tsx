@@ -1,9 +1,13 @@
-import { AudioLines, LogIn, UserRound } from "lucide-react";
+import { auth } from "@/auth";
+import { AudioLines, LayoutDashboard, LogIn, UserRound } from "lucide-react";
 import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export function MarketingHeader({ dark = false }: { dark?: boolean }) {
+export async function MarketingHeader({ dark = false }: { dark?: boolean }) {
+  const session = await auth();
+  const dashboardHref = session?.user?.role === "admin" ? "/admin" : "/dashboard";
+  const userInitial = getInitial(session?.user?.name, session?.user?.email);
   const linkClass = dark
     ? "text-slate-200 hover:text-white"
     : "text-slate-600 hover:text-slate-950";
@@ -30,45 +34,81 @@ export function MarketingHeader({ dark = false }: { dark?: boolean }) {
           </Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Link
-            className={`hidden h-10 items-center gap-2 rounded-full px-2.5 pr-4 text-sm font-semibold sm:inline-flex ${
-              dark ? "hover:bg-white/10" : "hover:bg-slate-100"
-            }`}
-            href="/login"
-          >
-            <Avatar className="size-8 ring-1 ring-white/15">
-              <AvatarImage alt="Kasa Cue" src="/kasa-icon.png" />
-              <AvatarFallback>
-                <UserRound className="size-4" />
-              </AvatarFallback>
-            </Avatar>
-            Sign in
-          </Link>
-          <Link
-            aria-label="Open login"
-            className={`inline-flex size-10 items-center justify-center rounded-full border sm:hidden ${
-              dark
-                ? "border-white/15 text-white hover:bg-white/10"
-                : "border-slate-200 text-slate-950 hover:bg-slate-100"
-            }`}
-            href="/login"
-          >
-            <LogIn className="size-4" />
-          </Link>
-          <Link
-            className={`inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold ${
-              dark
-                ? "bg-white text-slate-950 hover:bg-emerald-100"
-                : "bg-slate-950 text-white hover:bg-slate-800"
-            }`}
-            href="/signup"
-          >
-            Start
-          </Link>
+          {session?.user ? (
+            <>
+              <Link
+                className={`hidden h-10 items-center gap-2 rounded-full px-2.5 pr-4 text-sm font-semibold sm:inline-flex ${
+                  dark ? "hover:bg-white/10" : "hover:bg-slate-100"
+                }`}
+                href={dashboardHref}
+              >
+                <Avatar className="size-8 ring-1 ring-white/15">
+                  <AvatarImage alt={session.user.name ?? "Kasa Cue user"} src={session.user.image ?? ""} />
+                  <AvatarFallback className={dark ? "bg-white text-slate-950" : "bg-slate-950 text-white"}>
+                    {userInitial}
+                  </AvatarFallback>
+                </Avatar>
+                Dashboard
+              </Link>
+              <Link
+                aria-label="Open dashboard"
+                className={`inline-flex size-10 items-center justify-center rounded-full border sm:hidden ${
+                  dark
+                    ? "border-white/15 text-white hover:bg-white/10"
+                    : "border-slate-200 text-slate-950 hover:bg-slate-100"
+                }`}
+                href={dashboardHref}
+              >
+                <LayoutDashboard className="size-4" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                className={`hidden h-10 items-center gap-2 rounded-full px-2.5 pr-4 text-sm font-semibold sm:inline-flex ${
+                  dark ? "hover:bg-white/10" : "hover:bg-slate-100"
+                }`}
+                href="/login"
+              >
+                <Avatar className="size-8 ring-1 ring-white/15">
+                  <AvatarImage alt="Kasa Cue" src="/kasa-icon.png" />
+                  <AvatarFallback>
+                    <UserRound className="size-4" />
+                  </AvatarFallback>
+                </Avatar>
+                Sign in
+              </Link>
+              <Link
+                aria-label="Open login"
+                className={`inline-flex size-10 items-center justify-center rounded-full border sm:hidden ${
+                  dark
+                    ? "border-white/15 text-white hover:bg-white/10"
+                    : "border-slate-200 text-slate-950 hover:bg-slate-100"
+                }`}
+                href="/login"
+              >
+                <LogIn className="size-4" />
+              </Link>
+              <Link
+                className={`inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold ${
+                  dark
+                    ? "bg-white text-slate-950 hover:bg-emerald-100"
+                    : "bg-slate-950 text-white hover:bg-slate-800"
+                }`}
+                href="/signup"
+              >
+                Start
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
   );
+}
+
+function getInitial(name?: null | string, email?: null | string) {
+  return (name?.trim() || email?.trim() || "K").slice(0, 1).toUpperCase();
 }
 
 export function MarketingFooter() {

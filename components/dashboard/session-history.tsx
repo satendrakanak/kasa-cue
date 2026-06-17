@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarClock } from "lucide-react";
+import Link from "next/link";
 
 import {
   Card,
@@ -29,8 +30,9 @@ export function SessionHistory({ sessions }: SessionHistoryProps) {
         {sessions.length ? (
           <div className="grid gap-3">
             {sessions.map((session) => (
-              <div
-                className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+              <Link
+                className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-slate-300 hover:bg-white"
+                href={`/dashboard/sessions/${session.id}`}
                 key={session.id}
               >
                 <div className="min-w-0">
@@ -48,7 +50,7 @@ export function SessionHistory({ sessions }: SessionHistoryProps) {
                   </p>
                   <p>{session.endedAt ? "Ended" : "Live"}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
