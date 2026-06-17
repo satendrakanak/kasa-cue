@@ -41,10 +41,15 @@ export function DashboardSidebar({
       </div>
 
       <nav className="flex-1 space-y-1 px-4 py-5">
-        <SidebarItem active={activeItem === "home"} href="/" icon={Home} label="Home" />
+        <SidebarItem
+          active={activeItem === "home"}
+          href="/dashboard"
+          icon={Home}
+          label="Home"
+        />
         <SidebarItem
           active={activeItem === "sessions"}
-          href="/"
+          href="/dashboard"
           icon={CalendarClock}
           label="Sessions"
         />
@@ -62,7 +67,7 @@ export function DashboardSidebar({
         />
         <SidebarItem
           active={activeItem === "how-to"}
-          href="/"
+          href="/how-it-works"
           icon={Headphones}
           label="How to use"
         />
@@ -78,8 +83,8 @@ export function DashboardSidebar({
           <span className="font-semibold text-emerald-950">Unlimited</span>
         </div>
         <Separator className="my-3 bg-emerald-200" />
-        <Button className="w-full bg-emerald-700 text-white hover:bg-emerald-800">
-          Manage plan
+        <Button asChild className="w-full bg-emerald-700 text-white hover:bg-emerald-800">
+          <Link href="/pricing">Manage plan</Link>
         </Button>
       </div>
 

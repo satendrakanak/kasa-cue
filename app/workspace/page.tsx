@@ -20,7 +20,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
   const { sessionId } = await searchParams;
 
   if (!sessionId) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   let activeSession = await prisma.communicationSession.findFirst({
@@ -46,7 +46,7 @@ export default async function WorkspacePage({ searchParams }: WorkspacePageProps
   });
 
   if (!activeSession) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   if (

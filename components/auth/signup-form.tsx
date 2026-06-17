@@ -1,12 +1,11 @@
 "use client";
 
-import { AudioLines, Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
+import { AudioLines, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,43 +17,55 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type LoginFormProps = {
-  callbackUrl?: string;
+type SignupFormProps = {
   googleEnabled?: boolean;
 };
 
-export function LoginForm({
-  callbackUrl = "/dashboard",
-  googleEnabled = false,
-}: LoginFormProps) {
+export function SignupForm({ googleEnabled = false }: SignupFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
-
-  const safeCallbackUrl = getSafeCallbackUrl(callbackUrl);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setIsPending(true);
 
+    const response = await fetch("/api/auth/signup", {
+      body: JSON.stringify({ email, name, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      setError(payload?.error ?? "Could not create account.");
+      setIsPending(false);
+      return;
+    }
+
     const result = await signIn("credentials", {
+      callbackUrl: "/dashboard",
       email,
       password,
       redirect: false,
-      callbackUrl: safeCallbackUrl,
     });
 
     setIsPending(false);
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      router.push("/login?callbackUrl=/dashboard");
       return;
     }
 
-    router.push(result?.url ?? safeCallbackUrl);
+    router.push(result?.url ?? "/dashboard");
     router.refresh();
   }
 
@@ -62,19 +73,14 @@ export function LoginForm({
     <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_20%_20%,#d9f99d_0,transparent_28rem),linear-gradient(135deg,#f8fafc_0%,#eef2ff_45%,#fefce8_100%)] px-4 py-8 text-slate-950">
       <Card className="w-full max-w-md rounded-lg border-slate-200/90 bg-white/95 shadow-xl shadow-slate-200/60">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex size-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm">
-              <AudioLines className="size-5" />
-            </div>
-            <Badge className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-600">
-              <ShieldCheck className="size-3.5" />
-              Protected
-            </Badge>
+          <div className="flex size-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm">
+            <AudioLines className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-2xl">Sign in to Kasa Cue</CardTitle>
+            <CardTitle className="text-2xl">Create your Kasa Cue account</CardTitle>
             <CardDescription className="mt-2">
-              Login required before accessing the communication workspace.
+              Start with a user workspace for live calls, interviews, and saved
+              reference context.
             </CardDescription>
           </div>
         </CardHeader>
@@ -82,7 +88,7 @@ export function LoginForm({
           {googleEnabled ? (
             <Button
               className="h-10 w-full gap-2"
-              onClick={() => signIn("google", { callbackUrl: safeCallbackUrl })}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               type="button"
               variant="outline"
             >
@@ -91,6 +97,15 @@ export function LoginForm({
           ) : null}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -109,7 +124,8 @@ export function LoginForm({
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
+                autoComplete="new-password"
+                minLength={8}
                 required
               />
             </div>
@@ -128,27 +144,20 @@ export function LoginForm({
               {isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <LockKeyhole className="size-4" />
+                <UserPlus className="size-4" />
               )}
-              Sign in
+              Create account
             </Button>
           </form>
+
           <p className="text-center text-sm text-slate-600">
-            New to Kasa Cue?{" "}
-            <Link className="font-semibold text-slate-950" href="/signup">
-              Create an account
+            Already have an account?{" "}
+            <Link className="font-semibold text-slate-950" href="/login">
+              Sign in
             </Link>
           </p>
         </CardContent>
       </Card>
     </main>
   );
-}
-
-function getSafeCallbackUrl(value: string) {
-  if (!value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-
-  return value;
 }

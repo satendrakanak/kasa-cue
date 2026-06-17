@@ -56,7 +56,7 @@ export function DashboardShell({
               ) : null}
               <Button
                 variant="outline"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <LogOut className="size-4" />
                 Sign out

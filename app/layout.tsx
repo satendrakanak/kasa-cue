@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kasa Cue",
   description: "Realtime call transcript and suggested reply workspace.",
+  icons: {
+    apple: "/apple-icon.png",
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

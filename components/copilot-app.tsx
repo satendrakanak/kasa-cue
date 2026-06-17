@@ -439,7 +439,7 @@ export default function CopilotApp({ activeSession }: CopilotAppProps) {
     await fetch(`/api/sessions/${activeSession.id}`, {
       method: "PATCH",
     });
-    router.push("/");
+    router.push("/dashboard");
     router.refresh();
   }
 

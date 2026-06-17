@@ -10,13 +10,20 @@ type LoginPageProps = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
-  const { callbackUrl = "/" } = await searchParams;
+  const { callbackUrl = "/dashboard" } = await searchParams;
 
   if (session?.user) {
-    redirect(getSafeCallbackUrl(callbackUrl));
+    redirect(session.user.role === "admin" ? "/admin" : getSafeCallbackUrl(callbackUrl));
   }
 
-  return <LoginForm callbackUrl={callbackUrl} />;
+  return (
+    <LoginForm
+      callbackUrl={callbackUrl}
+      googleEnabled={Boolean(
+        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      )}
+    />
+  );
 }
 
 function getSafeCallbackUrl(value: string) {
