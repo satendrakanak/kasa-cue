@@ -100,15 +100,44 @@ Install:
 2. Drag Kasa Cue.app to Applications.
 3. Open Applications.
 4. On first launch, right-click Kasa Cue and choose Open.
-5. If macOS shows a warning, click Open again.
+5. If macOS only shows Done or Move to Bin, double-click Fix & Open Kasa Cue.command from this ZIP.
 
 Why this is needed:
 macOS may ask for confirmation because this free build is not notarized by Apple.
 README
+cat > "$ZIP_STAGE_DIR/Fix & Open Kasa Cue.command" <<'CMD'
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_PATH="/Applications/Kasa Cue.app"
+DMG_PATH="$(cd "$(dirname "$0")" && pwd)/Kasa-Cue-mac-arm64.dmg"
+
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "Kasa Cue is not installed in Applications yet."
+  echo "Opening the installer DMG now. Drag Kasa Cue.app to Applications, then run this file again."
+  if [[ -f "$DMG_PATH" ]]; then
+    xattr -dr com.apple.quarantine "$DMG_PATH" 2>/dev/null || true
+    xattr -cr "$DMG_PATH" 2>/dev/null || true
+    open "$DMG_PATH"
+  fi
+  read -r -p "Press Return to close."
+  exit 0
+fi
+
+echo "Allowing this local Kasa Cue install to open..."
+xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
+xattr -cr "$APP_PATH" 2>/dev/null || true
+codesign --verify --deep --strict "$APP_PATH" 2>/dev/null || true
+
+echo "Opening Kasa Cue..."
+open "$APP_PATH"
+echo "Done. You can close this window."
+CMD
+chmod +x "$ZIP_STAGE_DIR/Fix & Open Kasa Cue.command"
 
 (
   cd "$ZIP_STAGE_DIR"
-  zip -q "$ZIP_PATH" "Kasa-Cue-mac-arm64.dmg" "How to Install Kasa Cue.txt"
+  zip -q "$ZIP_PATH" "Kasa-Cue-mac-arm64.dmg" "How to Install Kasa Cue.txt" "Fix & Open Kasa Cue.command"
 )
 cp "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
 xattr -cr "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
