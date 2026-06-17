@@ -43,6 +43,7 @@ const providers: Provider[] = [
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     Google({
+      allowDangerousEmailAccountLinking: true,
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     })
@@ -66,7 +67,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true;
       }
 
-      const email = user.email?.toLowerCase() ?? profile?.email?.toLowerCase();
+      const email = String(user.email ?? profile?.email ?? "")
+        .trim()
+        .toLowerCase();
 
       if (!email) {
         return false;

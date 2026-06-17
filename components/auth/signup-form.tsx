@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { GoogleMark } from "@/components/auth/google-mark";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -87,11 +88,12 @@ export function SignupForm({ googleEnabled = false }: SignupFormProps) {
         <CardContent className="space-y-5">
           {googleEnabled ? (
             <Button
-              className="h-10 w-full gap-2"
+              className="h-10 w-full gap-2 bg-white text-slate-900 shadow-sm hover:bg-slate-50"
               onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               type="button"
               variant="outline"
             >
+              <GoogleMark className="size-4" />
               Continue with Google
             </Button>
           ) : null}

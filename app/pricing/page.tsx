@@ -1,5 +1,6 @@
 import { Check, Crown, Headphones, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+
+import { MarketingFooter, MarketingHeader } from "@/components/marketing/site-chrome";
 
 export default function PricingPage() {
   return (
@@ -56,24 +57,7 @@ export default function PricingPage() {
           ))}
         </div>
       </section>
+      <MarketingFooter />
     </main>
-  );
-}
-
-function MarketingHeader() {
-  return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link className="flex items-center gap-3 font-semibold" href="/">
-          <img alt="Kasa Cue" className="size-9 rounded-lg" src="/kasa-icon.png" />
-          Kasa Cue
-        </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium">
-          <Link href="/how-it-works">How it works</Link>
-          <Link href="/compare-plans">Compare</Link>
-          <Link href="/login">Sign in</Link>
-        </nav>
-      </div>
-    </header>
   );
 }
