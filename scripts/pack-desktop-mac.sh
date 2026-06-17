@@ -50,6 +50,47 @@ hdiutil attach "$RW_DMG_PATH" -mountpoint "$MOUNT_DIR" -nobrowse
 
 ditto "$APP_PATH" "$MOUNT_DIR/Kasa Cue.app"
 ln -s /Applications "$MOUNT_DIR/Applications"
+cat > "$MOUNT_DIR/Install & Open Kasa Cue.command" <<'CMD'
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE_APP="$(cd "$(dirname "$0")" && pwd)/Kasa Cue.app"
+TARGET_APP="/Applications/Kasa Cue.app"
+
+if [[ ! -d "$SOURCE_APP" ]]; then
+  echo "Could not find Kasa Cue.app next to this installer."
+  read -r -p "Press Return to close."
+  exit 1
+fi
+
+echo "Installing Kasa Cue to /Applications..."
+rm -rf "$TARGET_APP"
+ditto "$SOURCE_APP" "$TARGET_APP"
+
+echo "Removing macOS download quarantine for this local build..."
+xattr -dr com.apple.quarantine "$TARGET_APP" 2>/dev/null || true
+xattr -cr "$TARGET_APP" 2>/dev/null || true
+
+echo "Verifying app signature..."
+codesign --verify --deep --strict "$TARGET_APP" 2>/dev/null || true
+
+echo "Opening Kasa Cue..."
+open "$TARGET_APP"
+echo "Done. You can close this window."
+CMD
+chmod +x "$MOUNT_DIR/Install & Open Kasa Cue.command"
+cat > "$MOUNT_DIR/README - Open Kasa Cue.txt" <<'README'
+Kasa Cue desktop app
+
+If double-clicking the app shows "Apple could not verify Kasa Cue", use:
+
+1. Double-click "Install & Open Kasa Cue.command"
+2. Let it copy Kasa Cue to Applications
+3. The script removes quarantine for this local build and opens the app
+
+For normal one-click opening on every Mac, Kasa Cue must be signed with an
+Apple Developer ID certificate and notarized by Apple.
+README
 
 osascript <<OSA || true
 set mountFolder to POSIX file "$MOUNT_DIR" as alias
@@ -63,9 +104,15 @@ tell application "Finder"
     set statusbar visible of targetWindow to false
     set bounds of targetWindow to {100, 100, 700, 430}
     set arrangement of icon view options of targetWindow to not arranged
-    set icon size of icon view options of targetWindow to 96
-    set position of item "Kasa Cue.app" of mountFolder to {170, 160}
-    set position of item "Applications" of mountFolder to {430, 160}
+    set icon size of icon view options of targetWindow to 84
+    set position of item "Kasa Cue.app" of mountFolder to {150, 150}
+    set position of item "Applications" of mountFolder to {430, 150}
+    try
+      set position of item "Install & Open Kasa Cue.command" of mountFolder to {150, 300}
+    end try
+    try
+      set position of item "README - Open Kasa Cue.txt" of mountFolder to {430, 300}
+    end try
     update without registering applications
     delay 1
     close targetWindow

@@ -10,23 +10,37 @@ const DOWNLOADS: Record<
   {
     contentType: string;
     fileName: string;
-    paths: string[];
+    relativePaths: string[];
   }
 > = {
   "mac-arm64": {
     contentType: "application/x-apple-diskimage",
     fileName: "Kasa-Cue-mac-arm64.dmg",
-    paths: [
-      path.join(process.cwd(), "desktop-downloads", "Kasa-Cue-mac-arm64.dmg"),
-      path.join(process.cwd(), "desktop-downloads", "Kasa Cue-arm64.dmg"),
-      path.join(process.cwd(), "dist", "Kasa-Cue-mac-arm64.dmg"),
-      path.join(process.cwd(), "dist", "Kasa Cue-arm64.dmg"),
-      path.join(process.cwd(), "dist", "mac-arm64", "Kasa Cue.app.zip"),
+    relativePaths: [
+      path.join("desktop-downloads", "Kasa-Cue-mac-arm64.dmg"),
+      path.join("desktop-downloads", "Kasa Cue-arm64.dmg"),
+      path.join("dist", "Kasa-Cue-mac-arm64.dmg"),
+      path.join("dist", "Kasa Cue-arm64.dmg"),
+      path.join("dist", "mac-arm64", "Kasa Cue.app.zip"),
     ],
   },
 };
 
-export async function GET(request: Request) {
+function getSearchRoots() {
+  return Array.from(
+    new Set(
+      [
+        process.cwd(),
+        process.env.KASA_CUE_ROOT,
+        process.env.APP_ROOT,
+        "/var/www/kasa-cue",
+        "/home/ubuntu",
+      ].filter(Boolean) as string[]
+    )
+  );
+}
+
+async function resolveDownload(request: Request) {
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get("platform") ?? "mac-arm64";
   const download = DOWNLOADS[platform];
@@ -38,9 +52,11 @@ export async function GET(request: Request) {
     );
   }
 
-  const filePath = download.paths.find((candidatePath) =>
-    existsSync(candidatePath)
-  );
+  const filePath = getSearchRoots()
+    .flatMap((root) =>
+      download.relativePaths.map((relativePath) => path.join(root, relativePath))
+    )
+    .find((candidatePath) => existsSync(candidatePath));
 
   if (!filePath) {
     return Response.json(
@@ -53,9 +69,41 @@ export async function GET(request: Request) {
   }
 
   const fileStats = await stat(filePath);
+  return { download, filePath, fileStats };
+}
+
+export async function GET(request: Request) {
+  const resolved = await resolveDownload(request);
+
+  if (resolved instanceof Response) {
+    return resolved;
+  }
+
+  const { download, filePath, fileStats } = resolved;
   const fileStream = Readable.toWeb(createReadStream(filePath)) as BodyInit;
 
   return new Response(fileStream, {
+    headers: {
+      "Content-Disposition": `attachment; filename="${download.fileName}"`,
+      "Content-Length": String(fileStats.size),
+      "Content-Type": download.contentType,
+    },
+  });
+}
+
+export async function HEAD(request: Request) {
+  const resolved = await resolveDownload(request);
+
+  if (resolved instanceof Response) {
+    return new Response(null, {
+      headers: resolved.headers,
+      status: resolved.status,
+      statusText: resolved.statusText,
+    });
+  }
+
+  const { download, fileStats } = resolved;
+  return new Response(null, {
     headers: {
       "Content-Disposition": `attachment; filename="${download.fileName}"`,
       "Content-Length": String(fileStats.size),
