@@ -14,6 +14,14 @@ const DOWNLOADS: Record<
   }
 > = {
   "mac-arm64": {
+    contentType: "application/zip",
+    fileName: "Kasa-Cue-mac-arm64.zip",
+    relativePaths: [
+      path.join("desktop-downloads", "Kasa-Cue-mac-arm64.zip"),
+      path.join("dist", "Kasa-Cue-mac-arm64.zip"),
+    ],
+  },
+  "mac-arm64-dmg": {
     contentType: "application/x-apple-diskimage",
     fileName: "Kasa-Cue-mac-arm64.dmg",
     relativePaths: [
@@ -62,7 +70,7 @@ async function resolveDownload(request: Request) {
     return Response.json(
       {
         error:
-          "Mac M-series desktop build is not packaged yet. Run npm run desktop:pack, then place the generated DMG in desktop-downloads/Kasa-Cue-mac-arm64.dmg.",
+          "Mac M-series desktop build is not packaged yet. Run npm run desktop:pack, then place the generated ZIP in desktop-downloads/Kasa-Cue-mac-arm64.zip.",
       },
       { status: 404 }
     );
