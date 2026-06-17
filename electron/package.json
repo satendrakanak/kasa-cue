@@ -1,0 +1,8 @@
+{
+  "name": "kasa-cue-desktop",
+  "version": "0.1.0",
+  "description": "Kasa Cue desktop shell",
+  "author": "Kasa Cue",
+  "main": "main.cjs",
+  "private": true
+}

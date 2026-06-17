@@ -1,0 +1,18 @@
+[Unit]
+Description=Kasa Cue Next.js app
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/kasa-cue
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+EnvironmentFile=/var/www/kasa-cue/.env.production
+ExecStart=/usr/bin/npm run start:standalone
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

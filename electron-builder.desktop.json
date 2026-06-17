@@ -1,0 +1,64 @@
+{
+  "appId": "ai.kasa.cue",
+  "productName": "Kasa Cue",
+  "electronVersion": "39.8.10",
+  "artifactName": "Kasa-Cue-${os}-${arch}.${ext}",
+  "directories": {
+    "output": "../dist",
+    "buildResources": "assets"
+  },
+  "files": [
+    "main.cjs",
+    "preload.cjs",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "assets/kasa-icon.png",
+      "to": "assets/kasa-icon.png"
+    }
+  ],
+  "mac": {
+    "category": "public.app-category.productivity",
+    "extendInfo": {
+      "CFBundleURLTypes": [
+        {
+          "CFBundleURLName": "Kasa Cue Desktop Auth",
+          "CFBundleURLSchemes": [
+            "kasa-cue"
+          ]
+        }
+      ],
+      "CFBundleDisplayName": "Kasa Cue",
+      "CFBundleName": "Kasa Cue",
+      "LSUIElement": true,
+      "NSCameraUsageDescription": "Kasa Cue uses screen capture only when you ask it to analyze your screen.",
+      "NSMicrophoneUsageDescription": "Kasa Cue uses your microphone to transcribe live conversation and suggest replies.",
+      "NSScreenCaptureDescription": "Kasa Cue captures your screen when you press Analyze so it can understand visible context."
+    },
+    "icon": "assets/kasa-icon.png",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "arm64"
+        ]
+      }
+    ]
+  },
+  "dmg": {
+    "backgroundColor": "#ffffff",
+    "contents": [
+      {
+        "x": 130,
+        "y": 220
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ]
+  }
+}
