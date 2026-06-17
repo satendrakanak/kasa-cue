@@ -91,15 +91,16 @@ hdiutil verify "$DMG_PATH"
 ZIP_STAGE_DIR="$(mktemp -d /tmp/kasa-cue-zip.XXXXXX)"
 trap 'hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || true; rm -rf "$STAGE_DIR" "$MOUNT_DIR" "$RW_DMG_PATH" "$ZIP_STAGE_DIR"' EXIT
 
-ditto "$APP_PATH" "$ZIP_STAGE_DIR/Kasa Cue.app"
-cat > "$ZIP_STAGE_DIR/How to Open Kasa Cue.txt" <<'README'
+cp "$DMG_PATH" "$ZIP_STAGE_DIR/Kasa-Cue-mac-arm64.dmg"
+cat > "$ZIP_STAGE_DIR/How to Install Kasa Cue.txt" <<'README'
 Kasa Cue for Mac
 
 Install:
-1. Drag Kasa Cue.app to Applications.
-2. Open Applications.
-3. On first launch, right-click Kasa Cue and choose Open.
-4. If macOS shows a warning, click Open again.
+1. Double-click Kasa-Cue-mac-arm64.dmg.
+2. Drag Kasa Cue.app to Applications.
+3. Open Applications.
+4. On first launch, right-click Kasa Cue and choose Open.
+5. If macOS shows a warning, click Open again.
 
 Why this is needed:
 macOS may ask for confirmation because this free build is not notarized by Apple.
@@ -107,8 +108,7 @@ README
 
 (
   cd "$ZIP_STAGE_DIR"
-  ditto -c -k --sequesterRsrc --keepParent "Kasa Cue.app" "$ZIP_PATH"
-  zip -q "$ZIP_PATH" "How to Open Kasa Cue.txt"
+  zip -q "$ZIP_PATH" "Kasa-Cue-mac-arm64.dmg" "How to Install Kasa Cue.txt"
 )
 cp "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
 xattr -cr "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
