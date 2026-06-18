@@ -188,6 +188,9 @@ export function StartSessionModal({
                       }
                       if (item.id === "normal-talk") {
                         setCompany("");
+                        if (model === "gpt-4o-mini") {
+                          setModel("gpt-4.1-mini");
+                        }
                       }
                     }}
                     type="button"

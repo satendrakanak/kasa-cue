@@ -8,13 +8,18 @@ import { DesktopOverlayToolbar } from "./overlay/desktop-overlay-toolbar";
 import { DesktopTranscriptBar } from "./overlay/desktop-transcript-bar";
 
 type DesktopOverlayProps = {
+  initialLanguage: string;
+  initialMode: string;
+  initialModel: string;
   initialSessionId: string;
+  initialTone: string;
 };
 
 const AUDIO_DEVICE_STORAGE_KEY = "kasa-cue:desktop-audio-input-device-id";
 const SYSTEM_AUDIO_DEVICE_STORAGE_KEY =
   "kasa-cue:desktop-system-audio-input-device-id";
-const RECORDING_SEGMENT_MS = 3000;
+const RECORDING_SEGMENT_MS = 5000;
+const AUTO_ANSWER_PAUSE_MS = 1400;
 const MIN_TRANSCRIPT_WORDS = 2;
 
 type SpeechRecognitionEventLike = {
@@ -38,7 +43,13 @@ type SpeechRecognitionLike = {
   stop: () => void;
 };
 
-export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
+export function DesktopOverlay({
+  initialLanguage,
+  initialMode,
+  initialModel,
+  initialSessionId,
+  initialTone,
+}: DesktopOverlayProps) {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [transcript, setTranscript] = useState("");
   const [chatText, setChatText] = useState("");
@@ -73,6 +84,8 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
   const microphoneSegmentTimerRef = useRef<number | null>(null);
   const systemSegmentTimerRef = useRef<number | null>(null);
   const pendingTranscriptionsRef = useRef(0);
+  const transcriptionQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const autoAnswerTimerRef = useRef<number | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const isSystemUsingMicrophoneFallbackRef = useRef(false);
 
@@ -153,6 +166,9 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
       );
       stopStream(systemCaptureStreamRef.current);
       stopSpeechPreview(speechRecognitionRef.current);
+      if (autoAnswerTimerRef.current) {
+        window.clearTimeout(autoAnswerTimerRef.current);
+      }
     };
   }, []);
 
@@ -181,11 +197,13 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          language: initialLanguage,
+          mode: initialMode,
+          model: initialModel,
           responseLength: "adaptive",
           sessionId: sessionIdRef.current,
           stream: true,
-          tone: "adaptive-genuine",
+          tone: initialTone,
           transcript: nextTranscript,
         }),
       });
@@ -206,7 +224,7 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
         },
         body: JSON.stringify({
           content: text,
-          model: response.headers.get("X-Model") ?? "gpt-4o-mini",
+          model: response.headers.get("X-Model") ?? initialModel,
           speaker: "assistant",
         }),
       });
@@ -403,7 +421,9 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
       const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
 
       if (blob.size > 1000) {
-        void transcribeChunk(blob, source);
+        transcriptionQueueRef.current = transcriptionQueueRef.current
+          .catch(() => undefined)
+          .then(() => transcribeChunk(blob, source));
       }
 
       if (stream.getAudioTracks().some((track) => track.readyState === "live")) {
@@ -434,12 +454,15 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
     try {
       const formData = new FormData();
       formData.append("audio", blob, "desktop-audio.webm");
-      formData.append("mode", "interview");
-      formData.append("prompt", buildTranscriptionPrompt(source));
+      formData.append("mode", initialMode);
+      formData.append(
+        "prompt",
+        buildTranscriptionPrompt(source, initialMode, transcriptRef.current)
+      );
       formData.append("source", source);
-      formData.append("tone", "adaptive-genuine");
+      formData.append("tone", initialTone);
       formData.append("transcribeOnly", "true");
-      formData.append("language", "en");
+      formData.append("language", getTranscriptionLanguage(initialLanguage));
       formData.append("outputLanguage", "english");
 
       pendingTranscriptionsRef.current += 1;
@@ -458,20 +481,31 @@ export function DesktopOverlay({ initialSessionId }: DesktopOverlayProps) {
         return;
       }
 
-      setTranscript((current) => {
-        const heardText = data.transcript?.trim() ?? "";
+      const heardText = data.transcript?.trim() ?? "";
+      const currentTranscript = transcriptRef.current;
 
-        if (!heardText || isLikelyDuplicateTranscript(current, heardText)) {
-          return current;
+      if (
+        !heardText ||
+        isLikelyDuplicateTranscript(currentTranscript, heardText)
+      ) {
+        return;
+      }
+
+      const nextTranscript = [currentTranscript, heardText]
+        .filter(Boolean)
+        .join("\n");
+      transcriptRef.current = nextTranscript;
+      setTranscript(nextTranscript);
+
+      if (autoAnswerRef.current) {
+        if (autoAnswerTimerRef.current) {
+          window.clearTimeout(autoAnswerTimerRef.current);
         }
 
-        const nextTranscript = [current, heardText].filter(Boolean).join("\n");
-        void saveUserTurn(heardText);
-        if (autoAnswerRef.current) {
-          void generateReply(heardText);
-        }
-        return nextTranscript;
-      });
+        autoAnswerTimerRef.current = window.setTimeout(() => {
+          void generateReply(transcriptRef.current);
+        }, AUTO_ANSWER_PAUSE_MS);
+      }
     } catch {
       // Live audio keeps retrying on the next chunk.
     } finally {
@@ -1113,9 +1147,22 @@ function transcriptSimilarity(left: string, right: string) {
   return sharedWords.length / Math.max(leftWords.size, rightWords.size);
 }
 
-function buildTranscriptionPrompt(source: "microphone" | "system") {
+function buildTranscriptionPrompt(
+  source: "microphone" | "system",
+  mode: string,
+  recentTranscript: string
+) {
+  const recentContext = recentTranscript
+    .split("\n")
+    .slice(-6)
+    .join(" ")
+    .slice(-1200);
+
   return [
-    "This is live interview, meeting, phone-call, or client conversation audio.",
+    `Session mode: ${mode}.`,
+    mode === "normal-talk"
+      ? "This is a natural workplace conversation. Capture exactly what the other person means, including suggestions, approvals, requests, dates, purchases, invoices, reimbursements, and next actions."
+      : "This is live interview, meeting, phone-call, or client conversation audio.",
     source === "system"
       ? "Audio source is system output from a meeting, browser, video, or headphones."
       : "Audio source is microphone input and may include room speech, speaker audio, or a phone call nearby.",
@@ -1123,12 +1170,23 @@ function buildTranscriptionPrompt(source: "microphone" | "system") {
     "If the speaker uses Hindi, Urdu, or Hinglish, translate or transliterate it into natural English/Hinglish using Latin letters.",
     "Transcribe the intended spoken words clearly. If a word is slightly unclear, infer the most likely phrase from the conversation context.",
     "Keep names, companies, technologies, numbers, salary amounts, dates, and code terms accurate when audible.",
+    recentContext
+      ? `Recent conversation context for continuity only: ${recentContext}`
+      : "",
     "Return only newly audible speech from this audio chunk.",
     "If there is no clear new speech, return an empty transcript.",
     "Do not add explanations, labels, timestamps, repeated prior context, or punctuation-heavy formatting.",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function getTranscriptionLanguage(language: string) {
+  if (language === "hindi" || language === "hinglish") {
+    return "hi";
+  }
+
+  return "en";
 }
 
 function toEnglishLatinText(value: string) {

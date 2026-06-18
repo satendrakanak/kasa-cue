@@ -179,6 +179,10 @@ export function DesktopSessionLauncher({
               position: "",
               resumeDocumentId:
                 sessionType === "interview" ? current.resumeDocumentId : "",
+              model:
+                sessionType === "normal" && current.model === "gpt-4o-mini"
+                  ? "gpt-4.1-mini"
+                  : current.model,
               sessionType,
             }))
           }

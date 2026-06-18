@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       "normal-talk",
       "client-call",
     ]);
-    const latestQuestion = getLatestMeaningfulTranscriptLine(transcript);
+    const latestQuestion = getLatestMeaningfulTranscriptLine(transcript, mode);
     const taskType = detectTaskType(latestQuestion, mode);
     if (
       taskType === "interview-introduction" &&
@@ -175,7 +175,17 @@ export async function POST(request: Request) {
             "If the question is broad, such as 'tell me about yourself', give a complete spoken answer with relevant background, strengths, and fit for the situation.",
             "For introduction answers, avoid bullet points and avoid incomplete endings. Write one polished spoken answer that can be read directly, with a warm opening, a clear career story, concrete evidence, and a confident ending.",
             mode === "normal-talk"
-              ? "For normal workplace calls, give only what the user should say next. Keep it simple, fluent, respectful, and easy to speak. If helpful, include one short backup sentence starting with 'If needed:'"
+              ? [
+                  "For normal workplace calls, give only what the user should say next.",
+                  "First infer the speech act in the latest statement: question, suggestion, permission, request, update, correction, concern, or decision.",
+                  "Respond to that exact speech act. Do not answer a different imagined question and do not introduce unrelated advice.",
+                  "If the other person proposes a practical action, acknowledge it and confirm the same action in first person.",
+                  "Resolve pronouns from the live conversation: when the other person says 'can you' or asks 'you' to do something, 'you' means the Kasa Cue user. Convert that request into 'Yes, I can' or 'I will' in the reply.",
+                  "Never restate the other person's request as the user's own suggestion. For example, do not say 'I suggest purchasing it' when the user was asked to purchase it.",
+                  "Preserve concrete details exactly: item, date, location, amount, owner, invoice, reimbursement, deadline, and requested next step.",
+                  "Example: if they say the laptop delivery is July 6 and suggest buying nearby and sending the invoice to the company, reply like: 'Yes, that works. I will check a nearby store, purchase the laptop if it is available, and send the invoice to the company for reimbursement.'",
+                  "Keep it simple, fluent, respectful, and easy to speak. Usually use 1-3 sentences.",
+                ].join(" ")
               : "For normal cross-questions, answer directly first, then add one short example from the candidate's experience if useful.",
             "For scenario-based questions, first identify the problem, then explain the approach deeply, mention tradeoffs, and give a project-style example/outcome in a spoken way.",
             "For coding questions, provide a clean code answer in the most likely language or the language requested, then explain the approach, edge cases, complexity, and where this pattern would be used in a real project.",
@@ -891,11 +901,15 @@ function normalizeStringArray(value: unknown) {
     : [];
 }
 
-function getLatestMeaningfulTranscriptLine(transcript: string) {
+function getLatestMeaningfulTranscriptLine(transcript: string, mode?: string) {
   const lines = transcript
     .split(/\n+/)
     .map((line) => line.replace(/^(user|other|interviewer|candidate):\s*/i, "").trim())
     .filter(Boolean);
+
+  if (mode === "normal-talk") {
+    return lines.slice(-3).join(" ") || transcript.trim();
+  }
 
   return lines.at(-1) ?? transcript.trim();
 }
@@ -1023,6 +1037,12 @@ function getModeGuidance(mode: string) {
   return [
     "Normal talk mode: the user is speaking with English-speaking managers, teammates, HR, clients, or overseas colleagues.",
     "Answer as the user in first person, with simple professional English that can be spoken immediately.",
+    "Treat the latest heard words as the source of truth. Do not drift to an older topic or generate a generic workplace answer.",
+    "Identify what the other person expects the user to do next, then directly accept, decline, clarify, or confirm that action.",
+    "When the latest line asks 'can you' or tells 'you' to do an action, reply from the user's perspective with 'I can' or 'I will'.",
+    "When the other person gives a suggestion rather than asking a question, respond to the suggestion. A natural acknowledgement plus the exact next action is usually enough.",
+    "Retain dates, quantities, product names, invoice/reimbursement details, people, and deadlines from the latest statement.",
+    "Never replace a concrete request with vague phrases such as 'I will look into it' when the requested action is known.",
     "Use selected meeting brief/reference documents heavily. If the document says what today's call is about, align every answer to that topic and the user's intended position.",
     "If reference docs include vocabulary or talking points, reuse those words naturally so the user sounds prepared.",
     "Prioritize the best next reply, not explanation about the conversation.",
