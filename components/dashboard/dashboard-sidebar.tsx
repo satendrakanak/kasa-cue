@@ -106,13 +106,12 @@ export function DashboardSidebar({
           </a>
         </Button>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button
-            className="h-8 rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-400"
-            disabled
-            type="button"
+          <a
+            className="inline-flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            href="/api/desktop/download?platform=mac-x64"
           >
             Intel Mac
-          </button>
+          </a>
           <a
             className="inline-flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100"
             href="/api/desktop/download?platform=windows-x64"

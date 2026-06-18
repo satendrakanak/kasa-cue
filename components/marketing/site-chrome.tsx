@@ -139,6 +139,13 @@ export function MarketingFooter() {
             </a>
             <a
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+              href="/api/desktop/download?platform=mac-x64"
+            >
+              <AudioLines className="size-4" />
+              Intel Mac
+            </a>
+            <a
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
               href="/api/desktop/download?platform=windows-x64"
             >
               <AudioLines className="size-4" />

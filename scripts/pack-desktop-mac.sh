@@ -2,13 +2,26 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_PATH="$ROOT_DIR/dist/mac-arm64/Kasa Cue.app"
-DMG_PATH="$ROOT_DIR/dist/Kasa-Cue-mac-arm64.dmg"
-RW_DMG_PATH="$ROOT_DIR/dist/Kasa-Cue-mac-arm64-rw.dmg"
-ZIP_PATH="$ROOT_DIR/dist/Kasa-Cue-mac-arm64.zip"
-DOWNLOAD_PATH="$ROOT_DIR/desktop-downloads/Kasa-Cue-mac-arm64.dmg"
-DOWNLOAD_ZIP_PATH="$ROOT_DIR/desktop-downloads/Kasa-Cue-mac-arm64.zip"
-VOLUME_NAME="Kasa Cue 0.1.0-arm64"
+ARCH="${KASA_DESKTOP_ARCH:-arm64}"
+
+if [[ "$ARCH" != "arm64" && "$ARCH" != "x64" ]]; then
+  echo "Unsupported Mac architecture: $ARCH. Use arm64 or x64."
+  exit 1
+fi
+
+MAC_OUTPUT_DIR="mac-arm64"
+if [[ "$ARCH" == "x64" ]]; then
+  MAC_OUTPUT_DIR="mac"
+fi
+
+ARTIFACT_BASENAME="Kasa-Cue-mac-$ARCH"
+APP_PATH="$ROOT_DIR/dist/$MAC_OUTPUT_DIR/Kasa Cue.app"
+DMG_PATH="$ROOT_DIR/dist/$ARTIFACT_BASENAME.dmg"
+RW_DMG_PATH="$ROOT_DIR/dist/$ARTIFACT_BASENAME-rw.dmg"
+ZIP_PATH="$ROOT_DIR/dist/$ARTIFACT_BASENAME.zip"
+DOWNLOAD_PATH="$ROOT_DIR/desktop-downloads/$ARTIFACT_BASENAME.dmg"
+DOWNLOAD_ZIP_PATH="$ROOT_DIR/desktop-downloads/$ARTIFACT_BASENAME.zip"
+VOLUME_NAME="Kasa Cue 0.1.0-$ARCH"
 SIGN_IDENTITY="${DEVELOPER_ID_APPLICATION:-}"
 
 cd "$ROOT_DIR"
@@ -17,7 +30,7 @@ npx electron-builder \
   --projectDir electron \
   --config ../electron-builder.desktop.json \
   --mac dir \
-  --arm64
+  "--$ARCH"
 
 xattr -cr "$APP_PATH"
 
@@ -91,12 +104,12 @@ hdiutil verify "$DMG_PATH"
 ZIP_STAGE_DIR="$(mktemp -d /tmp/kasa-cue-zip.XXXXXX)"
 trap 'hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || true; rm -rf "$STAGE_DIR" "$MOUNT_DIR" "$RW_DMG_PATH" "$ZIP_STAGE_DIR"' EXIT
 
-cp "$DMG_PATH" "$ZIP_STAGE_DIR/Kasa-Cue-mac-arm64.dmg"
-cat > "$ZIP_STAGE_DIR/How to Install Kasa Cue.txt" <<'README'
+cp "$DMG_PATH" "$ZIP_STAGE_DIR/$ARTIFACT_BASENAME.dmg"
+cat > "$ZIP_STAGE_DIR/How to Install Kasa Cue.txt" <<README
 Kasa Cue for Mac
 
 Install:
-1. Double-click Kasa-Cue-mac-arm64.dmg.
+1. Double-click $ARTIFACT_BASENAME.dmg.
 2. Drag Kasa Cue.app to Applications.
 3. Open Applications.
 4. On first launch, right-click Kasa Cue and choose Open.
@@ -110,7 +123,8 @@ cat > "$ZIP_STAGE_DIR/Fix & Open Kasa Cue.command" <<'CMD'
 set -euo pipefail
 
 APP_PATH="/Applications/Kasa Cue.app"
-DMG_PATH="$(cd "$(dirname "$0")" && pwd)/Kasa-Cue-mac-arm64.dmg"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DMG_PATH="$(find "$SCRIPT_DIR" -maxdepth 1 -name 'Kasa-Cue-mac-*.dmg' -print -quit)"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Kasa Cue is not installed in Applications yet."
@@ -137,7 +151,7 @@ chmod +x "$ZIP_STAGE_DIR/Fix & Open Kasa Cue.command"
 
 (
   cd "$ZIP_STAGE_DIR"
-  zip -q "$ZIP_PATH" "Kasa-Cue-mac-arm64.dmg" "How to Install Kasa Cue.txt" "Fix & Open Kasa Cue.command"
+  zip -q "$ZIP_PATH" "$ARTIFACT_BASENAME.dmg" "How to Install Kasa Cue.txt" "Fix & Open Kasa Cue.command"
 )
 cp "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
 xattr -cr "$ZIP_PATH" "$DOWNLOAD_ZIP_PATH"
