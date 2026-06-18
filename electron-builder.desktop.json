@@ -18,6 +18,14 @@
       "to": "assets/kasa-icon.png"
     }
   ],
+  "protocols": [
+    {
+      "name": "Kasa Cue Desktop Auth",
+      "schemes": [
+        "kasa-cue"
+      ]
+    }
+  ],
   "mac": {
     "category": "public.app-category.productivity",
     "extendInfo": {
@@ -60,5 +68,28 @@
         "path": "/Applications"
       }
     ]
+  },
+  "win": {
+    "icon": "assets/kasa-icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ]
+  },
+  "nsis": {
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "deleteAppDataOnUninstall": false,
+    "displayLanguageSelector": false,
+    "oneClick": false,
+    "perMachine": false,
+    "runAfterFinish": true,
+    "shortcutName": "Kasa Cue"
   }
 }

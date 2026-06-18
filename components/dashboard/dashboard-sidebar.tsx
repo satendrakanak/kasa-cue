@@ -94,7 +94,7 @@ export function DashboardSidebar({
           Desktop app
         </div>
         <p className="mb-3 text-xs leading-5 text-slate-500">
-          Lightweight Mac app for live sessions and floating answers.
+          Desktop app for live sessions and floating answers.
         </p>
         <Button
           asChild
@@ -113,13 +113,12 @@ export function DashboardSidebar({
           >
             Intel Mac
           </button>
-          <button
-            className="h-8 rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-400"
-            disabled
-            type="button"
+          <a
+            className="inline-flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            href="/api/desktop/download?platform=windows-x64"
           >
             Windows
-          </button>
+          </a>
         </div>
       </div>
 

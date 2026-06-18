@@ -32,6 +32,14 @@ const DOWNLOADS: Record<
       path.join("dist", "mac-arm64", "Kasa Cue.app.zip"),
     ],
   },
+  "windows-x64": {
+    contentType: "application/vnd.microsoft.portable-executable",
+    fileName: "Kasa-Cue-win-x64.exe",
+    relativePaths: [
+      path.join("desktop-downloads", "Kasa-Cue-win-x64.exe"),
+      path.join("dist", "Kasa-Cue-win-x64.exe"),
+    ],
+  },
 };
 
 function getSearchRoots() {
@@ -69,8 +77,7 @@ async function resolveDownload(request: Request) {
   if (!filePath) {
     return Response.json(
       {
-        error:
-          "Mac M-series desktop build is not packaged yet. Run npm run desktop:pack, then place the generated ZIP in desktop-downloads/Kasa-Cue-mac-arm64.zip.",
+        error: `${download.fileName} is not available on this server yet.`,
       },
       { status: 404 }
     );

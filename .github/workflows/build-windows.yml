@@ -1,0 +1,78 @@
+name: Build Windows Desktop
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - "electron/**"
+      - "electron-builder.desktop.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-windows.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: kasa-cue-windows
+  cancel-in-progress: true
+
+env:
+  DEPLOY_HOST: 13.206.210.16
+  DEPLOY_PATH: /var/www/kasa-cue
+  DEPLOY_USER: ubuntu
+
+jobs:
+  build:
+    name: Build Windows installer
+    runs-on: windows-latest
+    environment: KASACUE_DEPLOYMENT
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer
+        run: npm run desktop:pack:windows
+
+      - name: Verify installer
+        shell: pwsh
+        run: |
+          $installer = "dist/Kasa-Cue-win-x64.exe"
+          if (!(Test-Path $installer)) {
+            throw "Windows installer was not generated at $installer"
+          }
+          Get-Item $installer | Format-List Name, Length, LastWriteTime
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kasa-Cue-Windows-x64
+          path: dist/Kasa-Cue-win-x64.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Configure deployment key
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "$HOME/.ssh" | Out-Null
+          @'
+          ${{ secrets.DEPLOY_SSH_KEY }}
+          '@ | Set-Content -Path "$HOME/.ssh/kasa-cue" -NoNewline
+          icacls "$HOME/.ssh/kasa-cue" /inheritance:r /grant:r "$env:USERNAME`:R" | Out-Null
+          ssh-keyscan -H $env:DEPLOY_HOST | Add-Content "$HOME/.ssh/known_hosts"
+
+      - name: Publish installer to production
+        shell: pwsh
+        run: |
+          ssh -i "$HOME/.ssh/kasa-cue" "$env:DEPLOY_USER@$env:DEPLOY_HOST" "mkdir -p '$env:DEPLOY_PATH/desktop-downloads' '$env:DEPLOY_PATH/.next/standalone/desktop-downloads'"
+          scp -i "$HOME/.ssh/kasa-cue" "dist/Kasa-Cue-win-x64.exe" "$env:DEPLOY_USER@$env:DEPLOY_HOST`:$env:DEPLOY_PATH/desktop-downloads/Kasa-Cue-win-x64.exe"
+          scp -i "$HOME/.ssh/kasa-cue" "dist/Kasa-Cue-win-x64.exe" "$env:DEPLOY_USER@$env:DEPLOY_HOST`:$env:DEPLOY_PATH/.next/standalone/desktop-downloads/Kasa-Cue-win-x64.exe"

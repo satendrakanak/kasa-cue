@@ -9,6 +9,7 @@
     "desktop": "electron electron/main.cjs",
     "desktop:dev": "KASA_WEB_APP_URL=http://localhost:3000 electron electron/main.cjs",
     "desktop:pack": "bash scripts/pack-desktop-mac.sh",
+    "desktop:pack:windows": "electron-builder --projectDir electron --config ../electron-builder.desktop.json --win nsis --x64",
     "dev": "next dev",
     "build": "next build",
     "postbuild": "mkdir -p .next/standalone/.next && cp -R public .next/standalone/public && cp -R .next/static .next/standalone/.next/static",

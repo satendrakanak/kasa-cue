@@ -129,13 +129,22 @@ export function MarketingFooter() {
         <FooterGroup title="Workspace" links={[["Sign in", "/login"], ["Create account", "/signup"], ["Dashboard", "/dashboard"]]} />
         <div>
           <p className="text-sm font-semibold">Desktop</p>
-          <a
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
-            href="/api/desktop/download?platform=mac-arm64"
-          >
-            <AudioLines className="size-4" />
-            Mac M-series
-          </a>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+              href="/api/desktop/download?platform=mac-arm64"
+            >
+              <AudioLines className="size-4" />
+              Mac M-series
+            </a>
+            <a
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+              href="/api/desktop/download?platform=windows-x64"
+            >
+              <AudioLines className="size-4" />
+              Windows
+            </a>
+          </div>
         </div>
       </div>
       <div className="mx-auto mt-8 flex max-w-7xl flex-col gap-2 border-t border-slate-200 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">

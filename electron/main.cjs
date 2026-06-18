@@ -15,7 +15,7 @@ const path = require("node:path");
 const APP_URL =
   process.env.KASA_WEB_APP_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
-  "http://localhost:3000";
+  "https://cue.getkasa.in";
 const APP_ICON = app.isPackaged
   ? path.join(process.resourcesPath, "assets", "kasa-icon.png")
   : path.join(__dirname, "assets", "kasa-icon.png");
@@ -29,6 +29,7 @@ let isSetupClosingForSession = false;
 let isQuitting = false;
 let pendingDeepLinkUrl = null;
 let lastScreenPermissionPromptAt = 0;
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
 const SETUP_EXPANDED_SIZE = { height: 600, width: 560 };
 const SETUP_COLLAPSED_SIZE = { height: 56, width: 56 };
@@ -36,6 +37,28 @@ const OVERLAY_COMPACT_SIZE = { height: 112, width: 600 };
 const OVERLAY_CHAT_SIZE = { height: 172, width: 600 };
 const OVERLAY_COLLAPSED_SIZE = { height: 56, width: 56 };
 const OVERLAY_RESULT_SIZE = { height: 430, width: 780 };
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, commandLine) => {
+    const deepLinkUrl = findDeepLink(commandLine);
+
+    if (deepLinkUrl) {
+      handleDeepLink(deepLinkUrl);
+      return;
+    }
+
+    const activeWindow = overlayWindow ?? setupWindow;
+    if (activeWindow && !activeWindow.isDestroyed()) {
+      if (activeWindow.isMinimized()) {
+        activeWindow.restore();
+      }
+      activeWindow.show();
+      activeWindow.focus();
+    }
+  });
+}
 
 function createSetupWindow() {
   setupWindow = new BrowserWindow({
@@ -174,6 +197,10 @@ app.whenReady().then(() => {
   }
   configureDesktopPermissions();
   createSetupWindow();
+  const launchDeepLink = findDeepLink(process.argv);
+  if (launchDeepLink) {
+    pendingDeepLinkUrl = launchDeepLink;
+  }
   if (pendingDeepLinkUrl) {
     handleDeepLink(pendingDeepLinkUrl);
     pendingDeepLinkUrl = null;
@@ -652,6 +679,12 @@ function handleDeepLink(url) {
   );
   setupWindow.show();
   setupWindow.focus();
+}
+
+function findDeepLink(values = []) {
+  return values.find(
+    (value) => typeof value === "string" && value.startsWith("kasa-cue://")
+  );
 }
 
 function showSetupFallback(message) {
